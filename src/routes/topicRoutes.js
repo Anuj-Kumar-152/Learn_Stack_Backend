@@ -5,7 +5,7 @@ const Topic = require("../models/Topic.js");
 
 router.get("/topics", async (req, res) => {
    const topics = await Topic.find();
-   console.log("hii topics 7856", topics)
+    
    res.json(topics);
 });
 
