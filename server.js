@@ -6,6 +6,10 @@ const cors = require("cors");
 
 const connectDb = require("./src/config/database.js");
 const topicRoutes = require("./src/routes/topicRoutes.js");
+const runCodeRoutes = require("./src/routes/runCode");
+const cleanupTemp = require("./src/utils/cleanupTemp");
+
+cleanupTemp(); // run cleanup on startup
 
 const app = express();
 const server = http.createServer(app);
@@ -39,7 +43,10 @@ app.get("/", (req, res) => {
    res.send("Learn Stack API is running");
 });
 
+
 app.use("/api", topicRoutes); 
+app.use("/api", runCodeRoutes);
+
 
 connectDb()
    .then(() => {
