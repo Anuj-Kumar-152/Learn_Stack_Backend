@@ -4,15 +4,17 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 
-const connectDb = require("./src/config/database.js");
-const topicRoutes = require("./src/routes/topicRoutes.js");
+const connectDb = require("./src/config/database");
+const topicRoutes = require("./src/routes/topicRoutes");
 const runCodeRoutes = require("./src/routes/runCode");
 const cleanupTemp = require("./src/utils/cleanupTemp");
+const userRoutes = require("./src/routes/userRoutes");
 
 cleanupTemp(); // run cleanup on startup
 
 const app = express();
 const server = http.createServer(app);
+ 
 
 const PORT = process.env.PORT || 9000; 
 const allowedOrigins = [
@@ -43,9 +45,16 @@ app.get("/", (req, res) => {
    res.send("Learn Stack API is running");
 });
 
+const authRoutes = require("./src/routes/authRoutes");
 
-app.use("/api", topicRoutes); 
+app.use("/uploads", express.static("uploads")); // 🔥 important
+
+
+app.use("/api/user", userRoutes);
+
+app.use("/api", topicRoutes);
 app.use("/api", runCodeRoutes);
+app.use("/api/auth", authRoutes);  // 🔥 FIXED
 
 
 connectDb()

@@ -1,73 +1,95 @@
- const { exec } = require("child_process");
+const { exec } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
 const runCodeController = async (req, res) => {
-
    let { code, input } = req.body;
 
    try {
-
       const tempDir = path.join(__dirname, "../../temp");
 
       if (!fs.existsSync(tempDir)) {
          fs.mkdirSync(tempDir);
       }
 
-      // Smart wrapper
-      if (!code.includes("class")) {
+      // =========================
+      // 🔥 CLASS DETECTION (FINAL)
+      // =========================
+
+      // 1. public class dhundo (priority)
+      let match = code.match(/public\s+class\s+(\w+)/);
+
+      // 2. agar public class nahi mila to normal class lo
+      if (!match) {
+         match = code.match(/class\s+(\w+)/);
+      }
+
+      let className = match ? match[1] : "Main";
+
+      // =========================
+      // 🧠 NO CLASS CASE
+      // =========================
+
+      if (!match) {
+         className = "Main";
 
          code = `
 public class Main {
    public static void main(String[] args) {
 
-${ code }
+${code}
 
    }
 }
 `;
-
       }
 
-      // Detect class name
-      const match = code.match(/public\s+class\s+(\w+)/);
-      const className = match ? match[1] : "Main";
+      // ⚠️ IMPORTANT:
+      // ❌ kisi bhi existing class ko modify nahi karna
 
-      const fileName = `${ className }.java`;
+      // =========================
+      // 📄 FILE CREATE
+      // =========================
+
+      const fileName = `${className}.java`;
       const filePath = path.join(tempDir, fileName);
 
       fs.writeFileSync(filePath, code);
 
-      // 🧾 Save input in file
+      // =========================
+      // 📥 INPUT FILE
+      // =========================
+
       const inputFile = path.join(tempDir, "input.txt");
       fs.writeFileSync(inputFile, input || "");
 
-      // Compile + run
-      const command =
-         `javac ${filePath} && java -cp ${tempDir} ${className} < ${inputFile}`;
+      // =========================
+      // ⚙️ COMPILE + RUN
+      // =========================
+
+      const command = `javac "${filePath}" && java -cp "${tempDir}" ${className} < "${inputFile}"`;
 
       exec(command, (error, stdout, stderr) => {
 
-         const classFile = path.join(tempDir, `${ className }.class`);
+         const classFile = path.join(tempDir, `${className}.class`);
 
+         // 🧹 CLEANUP
          try {
-
             if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
             if (fs.existsSync(classFile)) fs.unlinkSync(classFile);
             if (fs.existsSync(inputFile)) fs.unlinkSync(inputFile);
-
          } catch (cleanupError) {
-
             console.error("Cleanup error:", cleanupError);
-
          }
 
+         // ❌ ERROR
          if (error) {
             return res.json({
-               output: stderr || "Error running code"
+               output: stderr || error.message || "Error running code"
             });
          }
 
+         // ✅ SUCCESS
          res.json({
             output: stdout || "No Output"
          });
@@ -75,22 +97,13 @@ ${ code }
       });
 
    } catch (err) {
-
       res.status(500).json({
          output: "Server error"
       });
-
    }
-
 };
 
 module.exports = runCodeController;
-
-
-
-
-
-
 
 
 
