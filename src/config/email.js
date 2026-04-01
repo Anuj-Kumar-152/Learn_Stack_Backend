@@ -3,32 +3,42 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// transporter setup
+// ✅ Brevo SMTP transporter (Render safe)
 const transporter = nodemailer.createTransport({
-   service: "gmail",
+   host: process.env.SMTP_HOST,
+   port: Number(process.env.SMTP_PORT),
+   secure: false,
    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS
+   },
+   tls: {
+      rejectUnauthorized: false
    }
 });
 
 // send email function
 export const sendEmail = async (to, subject, otp) => {
    try {
-      await transporter.sendMail({
-         from: process.env.EMAIL_USER,
+      if (!to) {
+         throw new Error("Receiver email missing ❌");
+      }
+
+     
+
+      const info = await transporter.sendMail({
+         from: `"Code Platform" <kumaranuj7794@gmail.com>`, // ✅ FIX
          to,
          subject,
-         html: `
-         <div style="font-family: Arial; padding: 20px;">
-            <h2 style="color: #4f46e5;">OTP Verification</h2>
-            <p>Your OTP is:</p>
-            <h1 style="letter-spacing: 5px;">${otp}</h1>
-            <p>This OTP will expire in 1 minute ⏳</p>
-         </div>
-         `
+         text: `Your OTP is ${otp}`,
+         html: `<h1>${otp}</h1>`
       });
+
+      
+      return true;
+
    } catch (error) {
-      console.log(error);
+      console.log("❌ EMAIL ERROR FULL:", error);
+      return false;
    }
 };

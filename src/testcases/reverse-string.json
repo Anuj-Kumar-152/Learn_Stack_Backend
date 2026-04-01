@@ -1,0 +1,372 @@
+{
+   "testCases": [
+      {
+         "input": "a",
+         "output": "a"
+      },
+      {
+         "input": "ab",
+         "output": "ba"
+      },
+      {
+         "input": "abc",
+         "output": "cba"
+      },
+      {
+         "input": "abcd",
+         "output": "dcba"
+      },
+      {
+         "input": "abcde",
+         "output": "edcba"
+      },
+      {
+         "input": "abcdef",
+         "output": "fedcba"
+      },
+      {
+         "input": "abcdefg",
+         "output": "gfedcba"
+      },
+      {
+         "input": "abcdefgh",
+         "output": "hgfedcba"
+      },
+      {
+         "input": "abcdefghi",
+         "output": "ihgfedcba"
+      },
+      {
+         "input": "abcdefghij",
+         "output": "jihgfedcba"
+      },
+      {
+         "input": "hello",
+         "output": "olleh"
+      },
+      {
+         "input": "world",
+         "output": "dlrow"
+      },
+      {
+         "input": "code",
+         "output": "edoc"
+      },
+      {
+         "input": "java",
+         "output": "avaj"
+      },
+      {
+         "input": "python",
+         "output": "nohtyp"
+      },
+      {
+         "input": "openai",
+         "output": "ianepo"
+      },
+      {
+         "input": "chatgpt",
+         "output": "tpgtahc"
+      },
+      {
+         "input": "reverse",
+         "output": "esrever"
+      },
+      {
+         "input": "string",
+         "output": "gnirts"
+      },
+      {
+         "input": "array",
+         "output": "yarra"
+      },
+      {
+         "input": "a1",
+         "output": "1a"
+      },
+      {
+         "input": "a1b2",
+         "output": "2b1a"
+      },
+      {
+         "input": "12345",
+         "output": "54321"
+      },
+      {
+         "input": "1a2b3c",
+         "output": "c3b2a1"
+      },
+      {
+         "input": "racecar",
+         "output": "racecar"
+      },
+      {
+         "input": "madam",
+         "output": "madam"
+      },
+      {
+         "input": "level",
+         "output": "level"
+      },
+      {
+         "input": "Aa",
+         "output": "aA"
+      },
+      {
+         "input": "AbCd",
+         "output": "dCbA"
+      },
+      {
+         "input": "x",
+         "output": "x"
+      },
+      {
+         "input": "xy",
+         "output": "yx"
+      },
+      {
+         "input": "xyz",
+         "output": "zyx"
+      },
+      {
+         "input": "xyza",
+         "output": "azyx"
+      },
+      {
+         "input": "xyzab",
+         "output": "bazyx"
+      },
+      {
+         "input": "mnop",
+         "output": "ponm"
+      },
+      {
+         "input": "qrst",
+         "output": "tsrq"
+      },
+      {
+         "input": "uvwx",
+         "output": "xwvu"
+      },
+      {
+         "input": "hello1",
+         "output": "1olleh"
+      },
+      {
+         "input": "test123",
+         "output": "321tset"
+      },
+      {
+         "input": "abc123xyz",
+         "output": "zyx321cba"
+      },
+      {
+         "input": "aaaa",
+         "output": "aaaa"
+      },
+      {
+         "input": "bbbbbb",
+         "output": "bbbbbb"
+      },
+      {
+         "input": "ababab",
+         "output": "bababa"
+      },
+      {
+         "input": "zxywv",
+         "output": "vwyxz"
+      },
+      {
+         "input": "computer",
+         "output": "retupmoc"
+      },
+      {
+         "input": "science",
+         "output": "ecneics"
+      },
+      {
+         "input": "network",
+         "output": "krowten"
+      },
+      {
+         "input": "security",
+         "output": "ytiruces"
+      },
+      {
+         "input": "india",
+         "output": "aidni"
+      },
+      {
+         "input": "durgapur",
+         "output": "rupagrud"
+      },
+      {
+         "input": "reverse123",
+         "output": "321esrever"
+      },
+      {
+         "input": "111222",
+         "output": "222111"
+      },
+      {
+         "input": "abcabc",
+         "output": "cbacba"
+      },
+      {
+         "input": "abcdabcd",
+         "output": "dcbadcba"
+      },
+      {
+         "input": "qwerty",
+         "output": "ytrewq"
+      },
+      {
+         "input": "asdfgh",
+         "output": "hgfdsa"
+      },
+      {
+         "input": "zxcvbn",
+         "output": "nbvcxz"
+      },
+      {
+         "input": "poiuyt",
+         "output": "tyuiop"
+      },
+      {
+         "input": "lkjhgf",
+         "output": "fghjkl"
+      },
+      {
+         "input": "mnbvcxz",
+         "output": "zxcvbnm"
+      },
+      {
+         "input": "alpha",
+         "output": "ahpla"
+      },
+      {
+         "input": "beta",
+         "output": "ateb"
+      },
+      {
+         "input": "gamma",
+         "output": "ammag"
+      },
+      {
+         "input": "delta",
+         "output": "atled"
+      },
+      {
+         "input": "epsilon",
+         "output": "nolispe"
+      },
+      {
+         "input": "theta",
+         "output": "ateht"
+      },
+      {
+         "input": "lambda",
+         "output": "adbmal"
+      },
+      {
+         "input": "sigma",
+         "output": "amgis"
+      },
+      {
+         "input": "omega",
+         "output": "agemo"
+      },
+      {
+         "input": "stack",
+         "output": "kcats"
+      },
+      {
+         "input": "queue",
+         "output": "eueuq"
+      },
+      {
+         "input": "graph",
+         "output": "hparg"
+      },
+      {
+         "input": "tree",
+         "output": "eert"
+      },
+      {
+         "input": "binary",
+         "output": "yranib"
+      },
+      {
+         "input": "search",
+         "output": "hcraes"
+      },
+      {
+         "input": "sort",
+         "output": "tros"
+      },
+      {
+         "input": "merge",
+         "output": "egrem"
+      },
+      {
+         "input": "quick",
+         "output": "kciuq"
+      },
+      {
+         "input": "heap",
+         "output": "paeh"
+      },
+      {
+         "input": "dp",
+         "output": "pd"
+      },
+      {
+         "input": "greedy",
+         "output": "ydeerg"
+      },
+      {
+         "input": "backtrack",
+         "output": "kcartkcab"
+      },
+      {
+         "input": "recursion",
+         "output": "noisrucer"
+      },
+      {
+         "input": "iteration",
+         "output": "noitareti"
+      },
+      {
+         "input": "function",
+         "output": "noitcnuf"
+      },
+      {
+         "input": "variable",
+         "output": "elbairav"
+      },
+      {
+         "input": "constant",
+         "output": "tnatsnoc"
+      },
+      {
+         "input": "compile",
+         "output": "elipmoc"
+      },
+      {
+         "input": "execute",
+         "output": "etucexe"
+      },
+      {
+         "input": "debug",
+         "output": "gubed"
+      },
+      {
+         "input": "error",
+         "output": "rorre"
+      },
+      {
+         "input": "logic",
+         "output": "cigol"
+      }
+   ]
+}
