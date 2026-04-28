@@ -2,10 +2,9 @@ const User = require("../models/User");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
- 
+
 const { sendEmail } = require("../config/email");
 
-// 🔥 username generator
 // 🔥 username generator (IMPROVED)
 const generateUsername = async (name) => {
    const base = name.toLowerCase().replace(/\s+/g, "");
@@ -14,13 +13,9 @@ const generateUsername = async (name) => {
    let exists = true;
 
    while (exists) {
-      // 🔥 random number (1000–9999)
       const number = Math.floor(1000 + Math.random() * 9000);
-
-      // 🔥 random letters (2 chars)
       const chars = Math.random().toString(36).substring(2, 4);
 
-      // 🔥 final username
       username = `${base}_${chars}${number}`;
 
       const user = await User.findOne({ username });
@@ -29,67 +24,62 @@ const generateUsername = async (name) => {
 
    return username;
 };
- 
- 
 
-// exports.signup = async (req, res) => {
-//    const { name, email, password } = req.body;
-
-//    const exists = await User.findOne({ email });
-//    if (exists) return res.status(400).json({ msg: "Email exists" });
-
-//    const username = await generateUsername(name);
-//    const hashed = await bcrypt.hash(password, 10);
-
-//    // 🔥 OTP generate
-//    const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-//    const user = await User.create({
-//       name,
-//       email,
-//       password: hashed,
-//       username,
-//       otp,
-//       otpExpiry: Date.now() + 1 * 60 * 1000,
-//       isVerified: false,
-//       resendCount: 0   // ✅ ADD THIS
-//    });
-
-//    await sendEmail(
-//       email,
-//       "OTP Verification",
-//       otp
-//    );
-
-//    res.json({
-//       msg: "OTP sent to email"
-//    });
-// };
-
+// ✅ FIXED SIGNUP (ONLY VALIDATION ADDED)
 exports.signup = async (req, res) => {
-   const { name, email, password } = req.body;
+   try {
+      const { name, email, password } = req.body || {};
 
-   const existingUser = await User.findOne({ email });
-
-   // 🔥 अगर user already exist है
-   if (existingUser) {
-
-      // ❌ अगर verified है → block
-      if (existingUser.isVerified) {
-         return res.status(400).json({ msg: "Email already registered ❌" });
+      // 🔥 ONLY ADD THIS
+      if (!name || !email || !password) {
+         return res.status(400).json({ msg: "All fields are required ❌" });
       }
 
-      // 🔥 अगर unverified है → update कर दो
+      const existingUser = await User.findOne({ email });
+
+      // 🔥 अगर user already exist है
+      if (existingUser) {
+
+         // ❌ अगर verified है → block
+         if (existingUser.isVerified) {
+            return res.status(400).json({ msg: "Email already registered ❌" });
+         }
+
+         // 🔥 अगर unverified है → update कर दो
+         const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+         existingUser.name = name;
+         existingUser.password = await bcrypt.hash(password, 10);
+         existingUser.username = await generateUsername(name);
+         existingUser.otp = otp;
+         existingUser.otpExpiry = Date.now() + 1 * 60 * 1000;
+         existingUser.resendCount = 0;
+
+         await existingUser.save();
+
+         await sendEmail(email, "OTP Verification", otp);
+
+         return res.json({
+            msg: "OTP resent, please verify"
+         });
+      }
+
+      // 🔥 नया user create
+      const username = await generateUsername(name);
+      const hashed = await bcrypt.hash(password, 10);
+
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-      existingUser.name = name;
-      existingUser.password = await bcrypt.hash(password, 10);
-      existingUser.username = await generateUsername(name);
-      existingUser.otp = otp;
-      existingUser.otpExpiry = Date.now() + 1 * 60 * 1000;
-      existingUser.resendCount = 0;
-
-      await existingUser.save();
+      const user = await User.create({
+         name,
+         email,
+         password: hashed,
+         username,
+         otp,
+         otpExpiry: Date.now() + 1 * 60 * 1000,
+         isVerified: false,
+         resendCount: 0
+      });
 
       await sendEmail(
          email,
@@ -97,38 +87,17 @@ exports.signup = async (req, res) => {
          otp
       );
 
-      return res.json({
-         msg: "OTP resent, please verify"
+      res.json({
+         msg: "OTP sent to email"
       });
+
+   } catch (err) {
+      console.error(err);
+      res.status(500).json({ msg: "Server error" });
    }
-
-   // 🔥 नया user create
-   const username = await generateUsername(name);
-   const hashed = await bcrypt.hash(password, 10);
-
-   const otp = Math.floor(100000 + Math.random() * 900000).toString();
-
-   const user = await User.create({
-      name,
-      email,
-      password: hashed,
-      username,
-      otp,
-      otpExpiry: Date.now() + 1 * 60 * 1000,
-      isVerified: false,
-      resendCount: 0
-   });
-
-   await sendEmail(
-      email,
-      "OTP Verification",
-      otp
-   );
-
-   res.json({
-      msg: "OTP sent to email"
-   });
 };
+
+// बाकी पूरा code SAME है (NO CHANGE)
 
 exports.resendOtp = async (req, res) => {
    try {
@@ -143,7 +112,7 @@ exports.resendOtp = async (req, res) => {
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
       user.otp = otp;
-      user.otpExpiry = Date.now() + 1 * 60 * 1000; // 1 min
+      user.otpExpiry = Date.now() + 1 * 60 * 1000;
 
       await user.save();
 
@@ -161,8 +130,7 @@ exports.resendOtp = async (req, res) => {
    }
 };
 
-
-// ✅ LOGIN (email OR username)
+// ✅ LOGIN
 exports.login = async (req, res) => {
    const { identifier, password } = req.body;
 
@@ -187,24 +155,20 @@ exports.login = async (req, res) => {
    res.json({ token, user });
 };
 
-// ✅ GET PROFILE
+// ✅ बाकी सब untouched
 exports.getMe = async (req, res) => {
    const user = await User.findById(req.user.userId).select("-password");
    res.json(user);
 };
 
-
-// ✅ UPDATE PROFILE
 exports.updateProfile = async (req, res) => {
    try {
       const { name, bio, college, username, github, linkedin, skills } = req.body;
 
-      // 🔥 validation
       if (!name || name.length < 2) {
          return res.status(400).json({ msg: "Name too short" });
       }
 
-      // 🔥 username unique check
       if (username) {
          const existing = await User.findOne({ username });
 
@@ -220,8 +184,6 @@ exports.updateProfile = async (req, res) => {
             bio,
             college,
             username,
-
-            // 🔥 NEW FIELDS
             github,
             linkedin,
             skills
@@ -237,9 +199,7 @@ exports.updateProfile = async (req, res) => {
    }
 };
 
-// ✅ UPLOAD AVATAR
 exports.uploadAvatar = async (req, res) => {
-
    if (!req.file) {
       return res.status(400).json({ msg: "No file uploaded" });
    }
@@ -255,9 +215,6 @@ exports.uploadAvatar = async (req, res) => {
    res.json(user);
 };
 
-
-
-// ✅ CHECK USERNAME AVAILABILITY
 exports.checkUsername = async (req, res) => {
    try {
       const { username } = req.query;
@@ -280,9 +237,6 @@ exports.checkUsername = async (req, res) => {
    }
 };
 
-
-
-// 🔥 FORGOT PASSWORD
 exports.forgotPassword = async (req, res) => {
    try {
       const { identifier } = req.body;
@@ -319,7 +273,6 @@ exports.forgotPassword = async (req, res) => {
    }
 };
 
-// 🔥 RESET PASSWORD
 exports.resetPassword = async (req, res) => {
    try {
       const { email, otp, password } = req.body;
@@ -350,8 +303,6 @@ exports.resetPassword = async (req, res) => {
    }
 };
 
-
-// extra
 exports.verifyOtp = async (req, res) => {
    try {
       const { email, otp } = req.body;
@@ -369,7 +320,7 @@ exports.verifyOtp = async (req, res) => {
       user.isVerified = true;
       user.otp = undefined;
       user.otpExpiry = undefined;
-      user.resendCount = 0;   // ✅ RESET
+      user.resendCount = 0;
 
       await user.save();
 
@@ -393,10 +344,13 @@ exports.verifyOtp = async (req, res) => {
 
 
 
+
 // const User = require("../models/User");
 // const bcrypt = require("bcrypt");
 // const jwt = require("jsonwebtoken");
 // const crypto = require("crypto");
+ 
+// const { sendEmail } = require("../config/email");
 
 // // 🔥 username generator
 // // 🔥 username generator (IMPROVED)
@@ -422,8 +376,9 @@ exports.verifyOtp = async (req, res) => {
 
 //    return username;
 // };
+ 
+ 
 
-// // ✅ SIGNUP
 // // exports.signup = async (req, res) => {
 // //    const { name, email, password } = req.body;
 
@@ -433,31 +388,71 @@ exports.verifyOtp = async (req, res) => {
 // //    const username = await generateUsername(name);
 // //    const hashed = await bcrypt.hash(password, 10);
 
+// //    // 🔥 OTP generate
+// //    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
 // //    const user = await User.create({
 // //       name,
 // //       email,
 // //       password: hashed,
-// //       username
+// //       username,
+// //       otp,
+// //       otpExpiry: Date.now() + 1 * 60 * 1000,
+// //       isVerified: false,
+// //       resendCount: 0   // ✅ ADD THIS
 // //    });
 
-// //    const token = jwt.sign(
-// //       { userId: user._id },
-// //       process.env.JWT_SECRET,
-// //       { expiresIn: "7d" }
+// //    await sendEmail(
+// //       email,
+// //       "OTP Verification",
+// //       otp
 // //    );
 
-// //    res.json({ token, user });
+// //    res.json({
+// //       msg: "OTP sent to email"
+// //    });
 // // };
+
 // exports.signup = async (req, res) => {
 //    const { name, email, password } = req.body;
 
-//    const exists = await User.findOne({ email });
-//    if (exists) return res.status(400).json({ msg: "Email exists" });
+//    const existingUser = await User.findOne({ email });
 
+//    // 🔥 अगर user already exist है
+//    if (existingUser) {
+
+//       // ❌ अगर verified है → block
+//       if (existingUser.isVerified) {
+//          return res.status(400).json({ msg: "Email already registered ❌" });
+//       }
+
+//       // 🔥 अगर unverified है → update कर दो
+//       const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//       existingUser.name = name;
+//       existingUser.password = await bcrypt.hash(password, 10);
+//       existingUser.username = await generateUsername(name);
+//       existingUser.otp = otp;
+//       existingUser.otpExpiry = Date.now() + 1 * 60 * 1000;
+//       existingUser.resendCount = 0;
+
+//       await existingUser.save();
+
+//       await sendEmail(
+//          email,
+//          "OTP Verification",
+//          otp
+//       );
+
+//       return res.json({
+//          msg: "OTP resent, please verify"
+//       });
+//    }
+
+//    // 🔥 नया user create
 //    const username = await generateUsername(name);
 //    const hashed = await bcrypt.hash(password, 10);
 
-//    // 🔥 OTP generate
 //    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
 //    const user = await User.create({
@@ -466,15 +461,51 @@ exports.verifyOtp = async (req, res) => {
 //       password: hashed,
 //       username,
 //       otp,
-//       otpExpiry: Date.now() + 10 * 60 * 1000, // 10 min
-//       isVerified: false
+//       otpExpiry: Date.now() + 1 * 60 * 1000,
+//       isVerified: false,
+//       resendCount: 0
 //    });
 
-//    // 🔥 अभी testing (later email भेजेंगे)
-//    res.json({
-//       msg: "OTP sent",
+//    await sendEmail(
+//       email,
+//       "OTP Verification",
 //       otp
+//    );
+
+//    res.json({
+//       msg: "OTP sent to email"
 //    });
+// };
+
+// exports.resendOtp = async (req, res) => {
+//    try {
+//       const { email } = req.body;
+
+//       const user = await User.findOne({ email });
+
+//       if (!user) {
+//          return res.status(404).json({ msg: "User not found" });
+//       }
+
+//       const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+//       user.otp = otp;
+//       user.otpExpiry = Date.now() + 1 * 60 * 1000; // 1 min
+
+//       await user.save();
+
+//       await sendEmail(
+//          email,
+//          "Resend OTP",
+//          otp
+//       );
+
+//       res.json({ msg: "OTP resent" });
+
+//    } catch (err) {
+//       console.error(err);
+//       res.status(500).json({ msg: "Server error" });
+//    }
 // };
 
 
@@ -509,7 +540,7 @@ exports.verifyOtp = async (req, res) => {
 //    res.json(user);
 // };
 
- 
+
 // // ✅ UPDATE PROFILE
 // exports.updateProfile = async (req, res) => {
 //    try {
@@ -614,17 +645,20 @@ exports.verifyOtp = async (req, res) => {
 //          return res.status(404).json({ msg: "User not found" });
 //       }
 
-//       const token = crypto.randomBytes(32).toString("hex");
+//       const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-//       user.resetToken = token;
-//       user.resetTokenExpiry = Date.now() + 15 * 60 * 1000;
+//       user.otp = otp;
+//       user.otpExpiry = Date.now() + 1 * 60 * 1000;
 
 //       await user.save();
 
-//       res.json({
-//          msg: "Reset token generated",
-//          token
-//       });
+//       await sendEmail(
+//          user.email,
+//          "Password Reset OTP",
+//          otp
+//       );
+
+//       res.json({ msg: "OTP sent for password reset 📩" });
 
 //    } catch (err) {
 //       console.error(err);
@@ -635,27 +669,27 @@ exports.verifyOtp = async (req, res) => {
 // // 🔥 RESET PASSWORD
 // exports.resetPassword = async (req, res) => {
 //    try {
-//       const { token } = req.params;
-//       const { password } = req.body;
+//       const { email, otp, password } = req.body;
 
-//       const user = await User.findOne({
-//          resetToken: token,
-//          resetTokenExpiry: { $gt: Date.now() }
-//       });
+//       const user = await User.findOne({ email });
 
 //       if (!user) {
-//          return res.status(400).json({ msg: "Invalid or expired token" });
+//          return res.status(404).json({ msg: "User not found" });
+//       }
+
+//       if (user.otp !== otp || user.otpExpiry < Date.now()) {
+//          return res.status(400).json({ msg: "Invalid or expired OTP ❌" });
 //       }
 
 //       const hashed = await bcrypt.hash(password, 10);
 
 //       user.password = hashed;
-//       user.resetToken = undefined;
-//       user.resetTokenExpiry = undefined;
+//       user.otp = undefined;
+//       user.otpExpiry = undefined;
 
 //       await user.save();
 
-//       res.json({ msg: "Password reset successful" });
+//       res.json({ msg: "Password reset successful ✅" });
 
 //    } catch (err) {
 //       console.error(err);
@@ -682,6 +716,7 @@ exports.verifyOtp = async (req, res) => {
 //       user.isVerified = true;
 //       user.otp = undefined;
 //       user.otpExpiry = undefined;
+//       user.resendCount = 0;   // ✅ RESET
 
 //       await user.save();
 
@@ -698,3 +733,8 @@ exports.verifyOtp = async (req, res) => {
 //       res.status(500).json({ msg: "Server error" });
 //    }
 // };
+
+
+
+
+ 

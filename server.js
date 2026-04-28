@@ -10,7 +10,9 @@ const runCodeRoutes = require("./src/routes/runCode");
 const cleanupTemp = require("./src/utils/cleanupTemp");
 const userRoutes = require("./src/routes/userRoutes");
 const problemRoutes = require("./src/routes/problemRoutes");
-const runCode = require("./src/routes/runCode");
+ 
+const submissionRoutes = require("./src/routes/submissionRoutes");
+ 
 
 
 cleanupTemp(); // run cleanup on startup
@@ -61,7 +63,10 @@ app.use("/api/auth", authRoutes);  // 🔥 FIXED
 
 
 app.use("/api/problems", problemRoutes);
-app.use("/api", runCode);
+ 
+app.use("/api", submissionRoutes);
+
+ 
  
 
 connectDb()

@@ -4,8 +4,13 @@ const { execSync } = require("child_process");
 const Problem = require("../models/Problem");
 const generateWrapper = require("../utils/generateWrapper");
 
+const Submission = require("../models/Submission");
+const User = require("../models/User"); // 🔥 ADD
+
 const submitCodeController = async (req, res) => {
-   const { code, slug } = req.query;
+   const { code, slug, userId } = req.query;
+
+    
 
    try {
       const problem = await Problem.findOne({ slug });
@@ -15,7 +20,6 @@ const submitCodeController = async (req, res) => {
          return res.end();
       }
 
-      // 🔥 SSE HEADERS
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
@@ -36,29 +40,34 @@ const submitCodeController = async (req, res) => {
       const filePath = path.join(tempDir, `${className}.java`);
       fs.writeFileSync(filePath, finalCode);
 
-      // 🔥 COMPILE
+      // COMPILE
       try {
          execSync(`javac "${filePath}"`);
       } catch (err) {
+
+         await Submission.create({
+            userId,
+            problemSlug: slug,
+            code,
+            language: "java",
+            status: "Compilation Error ❌",
+            passed: 0,
+            total: 0
+         });
+
          send({ status: "Compilation Error ❌" });
          return res.end();
       }
 
-      // ================= LOAD TEST CASES FROM FILE =================
+      // LOAD TEST CASES
       let testCases = [];
 
       try {
-         // ✅ FIX 1: __dirname (production safe)
          const filePath = path.join(__dirname, "../testcases", `${slug}.json`);
-
          const rawData = fs.readFileSync(filePath, "utf-8");
-
          const parsed = JSON.parse(rawData);
-
-         // ✅ FIX 2: safe fallback
          testCases = parsed.testCases || [];
       } catch (err) {
-         console.log("❌ Test case file not found:", err);
          send({ status: "Test Case File Missing ❌" });
          return res.end();
       }
@@ -66,12 +75,11 @@ const submitCodeController = async (req, res) => {
       let passed = 0;
       const total = testCases.length;
 
-      // ================= RUN =================
+      // RUN
       for (let i = 0; i < total; i++) {
 
          const tc = testCases[i];
 
-         // ✅ FIX 3: unique input file (no overwrite issue)
          const inputFile = path.join(tempDir, `input_${fileId}_${i}.txt`);
          fs.writeFileSync(inputFile, tc.input);
 
@@ -83,12 +91,24 @@ const submitCodeController = async (req, res) => {
                { timeout: 2000 }
             ).toString();
          } catch (err) {
+
+            await Submission.create({
+               userId,
+               problemSlug: slug,
+               code,
+               language: "java",
+               status: "Runtime Error ❌",
+               passed,
+               total
+            });
+
             send({
                status: "Runtime Error ❌",
                passed,
                total,
                index: i + 1
             });
+
             return res.end();
          }
 
@@ -99,6 +119,17 @@ const submitCodeController = async (req, res) => {
          const expectedOut = normalize(tc.output);
 
          if (userOut !== expectedOut) {
+
+            await Submission.create({
+               userId,
+               problemSlug: slug,
+               code,
+               language: "java",
+               status: "Wrong Answer ❌",
+               passed,
+               total
+            });
+
             send({
                status: "Wrong Answer ❌",
                passed,
@@ -110,21 +141,74 @@ const submitCodeController = async (req, res) => {
                   index: i + 1
                }
             });
+
             return res.end();
          }
 
          passed++;
 
-         // 🔥 delay (same as before)
          await new Promise((r) => setTimeout(r, 40));
 
-         console.log("📤 Progress:", passed, "/", total);
-
-         // 🔥 LIVE PROGRESS
          send({ type: "progress", passed, total });
       }
 
-      // ✅ SUCCESS
+      // ✅ ACCEPTED + MARKS
+      console.log("✅ Accepted - Saving submission");
+
+      const alreadySolved = await Submission.findOne({
+         userId,
+         problemSlug: slug,
+         status: "Accepted ✔"
+      });
+
+      if (!alreadySolved && userId) {
+
+         let marks = 0; 
+
+         if (problem.difficulty === "Basic") marks = 1;
+         else if (problem.difficulty === "Easy") marks = 2;
+         else if (problem.difficulty === "Medium") marks = 4;
+         else if (problem.difficulty === "Hard") marks = 8;
+         else marks = 0;
+
+         
+
+         // 🔥🔥🔥 ONLY ADD THIS (NO CHANGE)
+         const user = await User.findById(userId);
+
+         if (user) {
+
+            const already = user.solvedQuestions?.find(
+               q => q.problemSlug === slug
+            );
+
+            if (!already) {
+
+               user.solvedQuestions.push({
+                  problemSlug: slug,
+                  title: problem.title,
+                  difficulty: problem.difficulty
+               });
+
+               user.score += marks;
+
+               await user.save();
+
+                
+            }
+         }
+      }
+
+      await Submission.create({
+         userId,
+         problemSlug: slug,
+         code,
+         language: "java",
+         status: "Accepted ✔",
+         passed,
+         total
+      });
+
       send({
          status: "Accepted ✔",
          passed,
@@ -145,15 +229,21 @@ module.exports = submitCodeController;
 
 
 
-
 // const fs = require("fs");
 // const path = require("path");
 // const { execSync } = require("child_process");
 // const Problem = require("../models/Problem");
 // const generateWrapper = require("../utils/generateWrapper");
 
+// const Submission = require("../models/Submission");
+
 // const submitCodeController = async (req, res) => {
-//    const { code, slug } = req.query;
+//    const { code, slug, userId } = req.query;   // 🔥 FIX HERE
+
+//    // 🔥 DEBUG
+//    console.log("🚀 SUBMIT CONTROLLER HIT");
+//    console.log("👤 USER ID:", userId);
+//    console.log("🧪 FULL QUERY:", req.query);
 
 //    try {
 //       const problem = await Problem.findOne({ slug });
@@ -163,11 +253,10 @@ module.exports = submitCodeController;
 //          return res.end();
 //       }
 
-//       // 🔥 SSE HEADERS
 //       res.setHeader("Content-Type", "text/event-stream");
 //       res.setHeader("Cache-Control", "no-cache");
 //       res.setHeader("Connection", "keep-alive");
-//       res.flushHeaders && res.flushHeaders(); // 🔥 important
+//       res.flushHeaders && res.flushHeaders();
 
 //       const send = (data) => {
 //          res.write(`data: ${JSON.stringify(data)}\n\n`);
@@ -188,18 +277,46 @@ module.exports = submitCodeController;
 //       try {
 //          execSync(`javac "${filePath}"`);
 //       } catch (err) {
+
+//          console.log("❌ Compilation Error - Saving submission");
+
+//          await Submission.create({
+//             userId,   // 🔥 SAME VARIABLE (ab correct aayega)
+//             problemSlug: slug,
+//             code,
+//             language: "java",
+//             status: "Compilation Error ❌",
+//             passed: 0,
+//             total: 0
+//          });
+
 //          send({ status: "Compilation Error ❌" });
 //          return res.end();
 //       }
 
+//       // ================= LOAD TEST CASES =================
+//       let testCases = [];
+
+//       try {
+//          const filePath = path.join(__dirname, "../testcases", `${slug}.json`);
+//          const rawData = fs.readFileSync(filePath, "utf-8");
+//          const parsed = JSON.parse(rawData);
+//          testCases = parsed.testCases || [];
+//       } catch (err) {
+//          console.log("❌ Test case file not found:", err);
+//          send({ status: "Test Case File Missing ❌" });
+//          return res.end();
+//       }
+
 //       let passed = 0;
-//       const total = problem.testCases.length;
+//       const total = testCases.length;
 
 //       // ================= RUN =================
 //       for (let i = 0; i < total; i++) {
 
-//          const tc = problem.testCases[i];
-//          const inputFile = path.join(tempDir, `input_${fileId}.txt`);
+//          const tc = testCases[i];
+
+//          const inputFile = path.join(tempDir, `input_${fileId}_${i}.txt`);
 //          fs.writeFileSync(inputFile, tc.input);
 
 //          let output;
@@ -210,12 +327,26 @@ module.exports = submitCodeController;
 //                { timeout: 2000 }
 //             ).toString();
 //          } catch (err) {
+
+//             console.log("❌ Runtime Error at case:", i + 1);
+
+//             await Submission.create({
+//                userId,
+//                problemSlug: slug,
+//                code,
+//                language: "java",
+//                status: "Runtime Error ❌",
+//                passed,
+//                total
+//             });
+
 //             send({
 //                status: "Runtime Error ❌",
 //                passed,
 //                total,
 //                index: i + 1
 //             });
+
 //             return res.end();
 //          }
 
@@ -226,6 +357,19 @@ module.exports = submitCodeController;
 //          const expectedOut = normalize(tc.output);
 
 //          if (userOut !== expectedOut) {
+
+//             console.log("❌ Wrong Answer at case:", i + 1);
+
+//             await Submission.create({
+//                userId,
+//                problemSlug: slug,
+//                code,
+//                language: "java",
+//                status: "Wrong Answer ❌",
+//                passed,
+//                total
+//             });
+
 //             send({
 //                status: "Wrong Answer ❌",
 //                passed,
@@ -237,21 +381,31 @@ module.exports = submitCodeController;
 //                   index: i + 1
 //                }
 //             });
+
 //             return res.end();
 //          }
 
 //          passed++;
 
-//          // 🔥 IMPORTANT: delay (fix 0/80 issue)
 //          await new Promise((r) => setTimeout(r, 40));
 
 //          console.log("📤 Progress:", passed, "/", total);
 
-//          // 🔥 LIVE PROGRESS
 //          send({ type: "progress", passed, total });
 //       }
 
-//       // ✅ SUCCESS
+//       console.log("✅ Accepted - Saving submission");
+
+//       await Submission.create({
+//          userId,
+//          problemSlug: slug,
+//          code,
+//          language: "java",
+//          status: "Accepted ✔",
+//          passed,
+//          total
+//       });
+
 //       send({
 //          status: "Accepted ✔",
 //          passed,
@@ -271,5 +425,5 @@ module.exports = submitCodeController;
 // module.exports = submitCodeController;
 
 
- 
+
  
