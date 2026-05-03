@@ -1,5 +1,5 @@
-import nodemailer from "nodemailer";
-import dotenv from "dotenv";
+const nodemailer = require("nodemailer");
+const dotenv = require("dotenv");
 
 dotenv.config();
 
@@ -18,7 +18,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // send email function
-export const sendEmail = async (to, subject, otp) => {
+const sendEmail = async (to, subject, otp) => {
    try {
       if (!to) {
          throw new Error("Receiver email missing ❌");
@@ -42,3 +42,5 @@ export const sendEmail = async (to, subject, otp) => {
       return false;
    }
 };
+
+module.exports = { sendEmail };

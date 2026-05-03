@@ -1,44 +1,44 @@
-const problemService = require('../services/problemService');
+const subjectService = require('../services/subjectService');
 
-exports.createProblem = async (req, res) => {
+exports.createSubject = async (req, res) => {
     try {
-        const result = await problemService.createProblem(req.user, req.body);
+        const result = await subjectService.createSubject(req.user, req.body);
         res.status(201).json({ success: true, data: result });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
 };
 
-exports.updateProblem = async (req, res) => {
+exports.updateSubject = async (req, res) => {
     try {
-        const result = await problemService.updateProblem(req.user, req.params.id, req.body);
+        const result = await subjectService.updateSubject(req.user, req.params.id, req.body);
         res.status(200).json({ success: true, data: result });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
     }
 };
 
-exports.getAllProblems = async (req, res) => {
+exports.getAllSubjects = async (req, res) => {
     try {
-        const result = await problemService.getAllProblems();
+        const result = await subjectService.getAllSubjects();
         res.status(200).json({ success: true, data: result });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
 };
 
-exports.getProblemById = async (req, res) => {
+exports.getSubjectById = async (req, res) => {
     try {
-        const result = await problemService.getProblemById(req.params.id);
+        const result = await subjectService.getSubjectById(req.params.id);
         res.status(200).json({ success: true, data: result });
     } catch (error) {
         res.status(404).json({ success: false, message: error.message });
     }
 };
 
-exports.deleteProblem = async (req, res) => {
+exports.deleteSubject = async (req, res) => {
     try {
-        await problemService.deleteProblem(req.user, req.params.id);
+        await subjectService.deleteSubject(req.user, req.params.id);
         res.status(200).json({ success: true, message: 'Deleted successfully' });
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });

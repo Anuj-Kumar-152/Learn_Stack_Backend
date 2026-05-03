@@ -1,19 +1,18 @@
 const mongoose = require("mongoose");
 
-const TopicSchema = new mongoose.Schema({
-   author: {
+const SubjectSchema = new mongoose.Schema({
+   userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
    },
-   subjectId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject",
-      required: true
+   isPrograming: {
+      type:Boolean
    },
    name: {
       type: String,
-      required: true
+      required: true,
+      unique: true
    },
    slug: {
       type: String,
@@ -22,7 +21,13 @@ const TopicSchema = new mongoose.Schema({
    },
    summary: {
       type: String
+   },
+   icon: {
+      type: String
+   },
+   coverImage: {
+      type: String
    }
 }, { timestamps: true });
 
-module.exports = mongoose.model("Topic", TopicSchema);
+module.exports = mongoose.model("Subject", SubjectSchema);

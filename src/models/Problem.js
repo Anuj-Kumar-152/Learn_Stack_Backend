@@ -1,55 +1,67 @@
 const mongoose = require("mongoose");
 
-// ✅ ADD THIS
-const parameterSchema = new mongoose.Schema({
-   type: String,
-   name: String
-});
-
-const problemSchema = new mongoose.Schema({
-   title: { type: String, required: true },
-
-   slug: { type: String, required: true, unique: true },
-
-   difficulty: {
+const ProblemSchema = new mongoose.Schema({
+   userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User"
+   },
+   slug: {
       type: String,
-      enum: ["Easy", "Medium", "Hard"],
+      unique: true,
       required: true
    },
-
-   description: String,
-   constraints: String,
-
-   // ✅ ADD THIS
-   functionName: {
+   title: {
       type: String,
-      default: "solve"
+      required: true,
+      unique: true,
+      trim: true
    },
-
-   returnType: {
+   summary: {
       type: String,
-      default: "int"
+      required: true,
+      trim: true
    },
-
-   parameters: [parameterSchema],
-
+   level: {
+      type: String,
+      enum: ["EASY", "MEDIUM", "HARD"]
+   },
+   referenceUrls: [
+      {
+         platformName: {
+            type: String,
+            required: true
+         },
+         url: String
+      }
+   ],
    examples: [
       {
-         input: String,
-         output: String,
-         explanation: String
+         input: {
+            type: String,
+            required: true
+         },
+         output: {
+            type: String,
+            required: true
+         },
+         summary: {
+            type: String
+         }
       }
    ],
-
-   testCases: [
+   timeComplexity: {
+      type: String
+   },
+   snippets: [
       {
-         input: String,
-         output: String,
-         hidden: Boolean
+         languageName: String,
+         snippet: String
       }
    ],
- 
-
+   hint: {
+      type: String,
+      trim: true
+   }
 }, { timestamps: true });
 
-module.exports = mongoose.model("Problem", problemSchema);
+module.exports = mongoose.model("Problem", ProblemSchema);

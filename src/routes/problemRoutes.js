@@ -1,44 +1,16 @@
-const express = require("express");
-const {
-   getProblems,
-   getProblemBySlug,
-   createProblem,
-   getProblemBoilerplate
-} = require("../controllers/problemController");
-
+const express = require('express');
 const router = express.Router();
+const problemController = require('../controllers/problemController');
+const { protect } = require('../middleware/authMiddleware');
+const { authorizeRoles } = require('../middleware/roleMiddleware');
 
-// 🔥 FIRST specific route
-router.get("/boilerplate/:slug", getProblemBoilerplate);
+router.route('/')
+    .get(problemController.getAllProblems)
+    .post(protect, authorizeRoles('ADMIN', 'EMPLOYEE'), problemController.createProblem);
 
-// 🔥 THEN generic route
-router.get("/:slug", getProblemBySlug);
-
-router.get("/", getProblems);
-router.post("/", createProblem);
+router.route('/:id')
+    .get(problemController.getProblemById)
+    .put(protect, authorizeRoles('ADMIN', 'EMPLOYEE'), problemController.updateProblem)
+    .delete(protect, authorizeRoles('ADMIN', 'EMPLOYEE'), problemController.deleteProblem);
 
 module.exports = router;
-
-
-
-
-
-
-
-
-// const express = require("express");
-// const {
-//    getProblems,
-//    getProblemBySlug,
-//    createProblem,
-//    getProblemBoilerplate
-// } = require("../controllers/problemController");
-
-// const router = express.Router();
-
-// router.get("/", getProblems);
-// router.get("/:slug", getProblemBySlug);
-// router.post("/", createProblem);
-// router.get("/boilerplate/:slug", getProblemBoilerplate);
-
-// module.exports = router;

@@ -8,7 +8,8 @@ const Submission = require("../models/Submission");
 const User = require("../models/User"); // 🔥 ADD
 
 const submitCodeController = async (req, res) => {
-   const { code, slug, userId } = req.query;
+   const { code, slug } = req.query;
+   const userId = req.user?._id;
 
     
 
